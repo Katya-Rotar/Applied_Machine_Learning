@@ -103,3 +103,29 @@ def run_true_nested_cv(X, y, cost_fp=100, cost_fn=1000):
     print("="*40)
     
     return outer_scores_f1, outer_scores_auc, total_costs
+
+def calculate_fairness(y_true, y_pred, protected_attr):
+    """
+    Розраховує Demographic Parity Ratio (DPR) та Equalized Odds Ratio (EOR).
+    """
+    g0_mask = (protected_attr == 0)
+    g1_mask = (protected_attr == 1)
+    
+    if np.sum(g0_mask) == 0 or np.sum(g1_mask) == 0:
+        return np.nan, np.nan
+        
+    mean_g0 = np.mean(y_pred[g0_mask])
+    mean_g1 = np.mean(y_pred[g1_mask])
+    dpr = mean_g0 / mean_g1 if mean_g1 != 0 else np.nan
+    
+    tpr_g0_num = np.sum((y_pred[g0_mask] == 1) & (y_true[g0_mask] == 1))
+    tpr_g0_den = np.sum(y_true[g0_mask] == 1)
+    tpr_g0 = tpr_g0_num / tpr_g0_den if tpr_g0_den != 0 else 0
+    
+    tpr_g1_num = np.sum((y_pred[g1_mask] == 1) & (y_true[g1_mask] == 1))
+    tpr_g1_den = np.sum(y_true[g1_mask] == 1)
+    tpr_g1 = tpr_g1_num / tpr_g1_den if tpr_g1_den != 0 else 0
+    
+    eor = tpr_g0 / tpr_g1 if tpr_g1 != 0 else np.nan
+    
+    return dpr, eor
